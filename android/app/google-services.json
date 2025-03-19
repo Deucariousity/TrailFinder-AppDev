@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "680390031053",
+    "project_id": "trailfinder-78ecb",
+    "storage_bucket": "trailfinder-78ecb.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:680390031053:android:8aff8797ff4d208d461b84",
+        "android_client_info": {
+          "package_name": "com.example.student_nav_system"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBTlRpnEtnxKO-MJkuo610sVLFRzjBOzz4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
