@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:student_nav_system/custom_page_route.dart';
+import 'package:TrailFinder/custom_page_route.dart';
 import 'login_screen.dart';
 
 class IntroScreen extends StatefulWidget {

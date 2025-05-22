@@ -1,0 +1,41 @@
+Cloud Firestore: TrailFinder Database
+
+students (Collection)
+└── studentId (Document)
+    ├── course: "string"
+    ├── email: "string"
+    ├── gender: "string"
+    ├── name: "string"
+    ├── otp: (generated)
+    ├── otpCreatedAt: (generated)
+    ├── password: number
+    ├── phone: "string"
+    ├── program: "string"
+    ├── section: "string"
+    ├── studentId: "string"
+    ├── verified: Boolean
+    ├── phone: "string"
+    ├── year level: "string"
+    └── schedules: array
+        └── 0: map
+            ├── building: "string"
+            ├── college: "string"
+            ├── course_code: "string"
+            ├── course_name: "string"
+            ├── day: "string"
+            ├── start: "string"
+            ├── end: "string"
+            └── room: "string"
+        └── 1: map
+            ├── building: "string"
+            ├── college: "string"
+            ├── course_code: "string"
+            ├── course_name: "string"
+            ├── day: "string"
+            ├── start: "string"
+            ├── end: "string"
+            └── room: "string"
+        └── ...
+
+
+

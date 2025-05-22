@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:student_nav_system/custom_page_route.dart';
+import 'package:TrailFinder/custom_page_route.dart';
 import 'guest_home_screen.dart';
 import 'email_verification_screen.dart';
 
@@ -42,18 +42,20 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       // ✅ Retrieve Firestore fields safely
-      String storedPassword = studentDoc.get('password').toString();
-      String studentEmail = studentDoc.get('email') ?? "";
+      final data = studentDoc.data() as Map<String, dynamic>;
+      data['id'] = studentId; // ✅ Insert studentId into map for later screens
+
+      String storedPassword = data['password'].toString();
+      String studentEmail = data['email'] ?? "";
 
       // 🔐 Validate password
       if (password == storedPassword) {
-        // ✅ Navigate to Email Verification Screen
         Navigator.pushReplacement(
           context,
           CustomPageRoute(
             page: EmailVerificationScreen(
-              studentId: studentId,
-              studentEmail: studentEmail,
+              studentID: studentId,
+              studentData: data, // ✅ Now includes 'id', 'phone', etc.
             ),
           ),
         );
@@ -67,6 +69,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => _isLoading = false);
   }
+
 
   /// 🎭 **Login as Guest**
   void _loginAsGuest() {

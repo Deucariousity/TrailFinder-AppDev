@@ -1,16 +1,20 @@
-import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_otp_text_field/flutter_otp_text_field.dart';
-import 'package:student_nav_system/custom_page_route.dart';
+import 'package:TrailFinder/custom_page_route.dart';
 import 'student_home_screen.dart';
 
 class OTPVerificationScreen extends StatefulWidget {
-  final String studentId;
+  final String studentID;
   final String studentEmail;
+  final Map<String, dynamic> studentData;
 
-  OTPVerificationScreen({required this.studentId, required this.studentEmail});
+  OTPVerificationScreen({
+    required this.studentID,
+    required this.studentEmail,
+    required this.studentData,
+  });
 
   @override
   _OTPVerificationScreenState createState() => _OTPVerificationScreenState();
@@ -22,11 +26,6 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
   bool isLoadingConfirm = false;
   bool isLoadingResend = false;
 
-  // Function to generate a random 6-digit OTP
-  String _generateOTP() {
-    return (100000 + Random().nextInt(900000)).toString();
-  }
-
   Future<void> _verifyOTP() async {
     if (otpCode.length < 6) {
       _showMessage("Please enter the full OTP");
@@ -37,22 +36,51 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
 
     try {
       DocumentSnapshot studentDoc =
-      await _firestore.collection('students').doc(widget.studentId).get();
+      await _firestore.collection('students').doc(widget.studentID).get();
 
       if (studentDoc.exists) {
         String storedOTP = studentDoc['otp'];
+        Timestamp createdAt = studentDoc['otpCreatedAt'];
+        DateTime expiryTime = createdAt.toDate().add(Duration(minutes: 2));
+
+        if (DateTime.now().isAfter(expiryTime)) {
+          _showMessage("OTP has expired. Please request a new one.");
+          return;
+        }
 
         if (otpCode == storedOTP) {
-          await _firestore.collection('students').doc(widget.studentId).update({
+          await _firestore.collection('students').doc(widget.studentID).update({
             'verified': true,
           });
 
-          Navigator.pushReplacement(
-            context,
-            CustomPageRoute(
-              page: StudentHomeScreen(studentName: studentDoc['name']),
-            ),
-          );
+          // 🔁 Re-fetch updated student data
+          DocumentSnapshot updatedStudentDoc =
+          await _firestore.collection('students').doc(widget.studentID).get();
+          Map<String, dynamic> updatedStudentData =
+          updatedStudentDoc.data() as Map<String, dynamic>;
+
+          final updatedDoc = await _firestore.collection('students').doc(widget.studentID).get();
+
+          if (updatedDoc.exists) {
+            final updatedDoc = await _firestore.collection('students').doc(widget.studentID).get();
+
+            if (updatedDoc.exists) {
+              final updatedData = updatedDoc.data()!;
+              updatedData['id'] = updatedDoc.id; // <-- add document ID manually
+              Navigator.pushReplacement(
+                context,
+                CustomPageRoute(
+                  page: StudentHomeScreen(studentData: updatedData),
+                ),
+              );
+            } else {
+              _showMessage("Failed to load student data after verification.");
+            }
+
+          } else {
+            _showMessage("Failed to load student data after verification.");
+          }
+
         } else {
           _showMessage("Invalid OTP. Please try again.");
         }
@@ -67,20 +95,18 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
     }
   }
 
+
   Future<void> _resendOTP() async {
     setState(() => isLoadingResend = true);
 
     try {
-      String newOTP = _generateOTP();
-      print("Generated OTP: $newOTP");
+      String newOTP = (100000 + DateTime.now().millisecondsSinceEpoch % 900000).toString();
 
-      // Update Firestore with new OTP
-      await _firestore.collection('students').doc(widget.studentId).update({
+      await _firestore.collection('students').doc(widget.studentID).update({
         'otp': newOTP,
+        'otpCreatedAt': Timestamp.now(),
       });
-      print("OTP updated in Firestore");
 
-      // Send new OTP via email
       bool emailSent = await _sendOTPByEmail(newOTP);
 
       if (emailSent) {
@@ -226,5 +252,3 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
     );
   }
 }
-
-

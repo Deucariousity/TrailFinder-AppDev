@@ -2,15 +2,15 @@ import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:mailer/mailer.dart';
-import 'package:mailer/smtp_server/gmail.dart';
-import 'package:student_nav_system/custom_page_route.dart';
+import 'package:mailer/smtp_server.dart';
+import 'package:TrailFinder/custom_page_route.dart';
 import 'otp_verification_screen.dart';
 
 class EmailVerificationScreen extends StatefulWidget {
-  final String studentId;
-  final String studentEmail;
+  final String studentID;
+  final Map<String, dynamic> studentData;
 
-  EmailVerificationScreen({required this.studentId, required this.studentEmail});
+  EmailVerificationScreen({required this.studentID, required this.studentData});
 
   @override
   _EmailVerificationScreenState createState() => _EmailVerificationScreenState();
@@ -18,66 +18,91 @@ class EmailVerificationScreen extends StatefulWidget {
 
 class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  String? _generatedOTP;
+  final _emailController = TextEditingController();
+
   bool isLoading = false;
+  String? _generatedOTP;
 
   Future<void> _sendOTP() async {
-    setState(() {
-      isLoading = true;
-    });
+    final email = _emailController.text.trim();
+
+    if (email.isEmpty) {
+      _showMessage("Please enter a valid email.");
+      return;
+    }
+
+    print("➡️ Send OTP button clicked");
+    setState(() => isLoading = true);
+
+    final stopwatch = Stopwatch()..start();
+    _generatedOTP = (100000 + Random().nextInt(900000)).toString();
+    print("🔢 Generated OTP: $_generatedOTP");
 
     try {
-      _generatedOTP = (100000 + Random().nextInt(900000)).toString();
-      await _firestore.collection('students').doc(widget.studentId).set({
+      // Save OTP to Firestore
+      await _firestore.collection('students').doc(widget.studentID).set({
         'otp': _generatedOTP,
         'otpCreatedAt': Timestamp.now(),
+        'email': email,
       }, SetOptions(merge: true));
-      await _sendEmail(widget.studentEmail, _generatedOTP!);
-      _showMessage("OTP has been sent to ${widget.studentEmail}");
+      print("✅ Firestore write complete in ${stopwatch.elapsedMilliseconds}ms");
 
-      Navigator.push(
+      stopwatch.reset();
+
+      // Send email
+      await _sendEmail(email, _generatedOTP!);
+      print("✅ Email sent in ${stopwatch.elapsedMilliseconds}ms");
+
+      _showMessage("OTP has been sent to $email");
+
+      // Navigate to OTP verification screen
+      Navigator.pushReplacement(
         context,
         CustomPageRoute(
           page: OTPVerificationScreen(
-            studentId: widget.studentId,
-            studentEmail: widget.studentEmail,
+            studentID: widget.studentID,
+            studentData: widget.studentData,
+            studentEmail: email,
           ),
         ),
       );
     } catch (e) {
-      print("Error sending OTP: $e");
+      print("❌ Error sending OTP: $e");
       _showMessage("Error sending OTP. Please try again.");
     }
 
-    setState(() {
-      isLoading = false;
-    });
+    setState(() => isLoading = false);
   }
 
   Future<void> _sendEmail(String email, String otp) async {
-    String username = "trailfinder.appdev2d@gmail.com";
-    String password = "vjrgsfvgowrxaqqu";
+    final String username = 'trailfinder.appdev2d@gmail.com';
+    final String password = 'bcutzzohplzpqcgm'; // Gmail App Password
 
-    final smtpServer = gmail(username, password);
+    final smtpServer = SmtpServer(
+      'smtp.gmail.com',
+      port: 587,
+      username: username,
+      password: password,
+      ssl: false,
+    );
+
     final message = Message()
-      ..from = Address(username, 'Student Nav System')
+      ..from = Address(username, 'TrailFinder OTP')
       ..recipients.add(email)
-      ..subject = "Your OTP Verification Code"
-      ..text = "Your OTP code is: $otp. Do not share this code with anyone.";
+      ..subject = 'Your OTP Code'
+      ..text = 'Your OTP code is: $otp. It will expire in 2 minutes.';
 
     try {
-      await send(message, smtpServer);
-      print("✅ OTP sent successfully!");
+      final sendReport = await send(message, smtpServer);
+      print("📤 SMTP report: $sendReport");
     } catch (e) {
-      print("❌ Email send failed: $e");
-      _showMessage("Failed to send OTP. Check your email settings.");
+      print("❌ Email error: $e");
+      rethrow;
     }
   }
 
   void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -96,14 +121,13 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                'Please enter your email to verify your account',
+                'Please input your email to verify your account',
                 style: TextStyle(fontSize: 18, color: Colors.black),
                 textAlign: TextAlign.center,
               ),
               SizedBox(height: 20),
               TextField(
-                readOnly: true,
-                controller: TextEditingController(text: widget.studentEmail),
+                controller: _emailController,
                 decoration: InputDecoration(
                   labelText: 'Email',
                   labelStyle: TextStyle(fontSize: 15, color: Colors.black),
@@ -127,10 +151,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                 ),
                 child: isLoading
                     ? CircularProgressIndicator(color: Colors.black)
-                    : Text(
-                  'Send OTP',
-                  style: TextStyle(fontSize: 13, color: Colors.black),
-                ),
+                    : Text('Send OTP', style: TextStyle(fontSize: 13, color: Colors.black)),
               ),
             ],
           ),
@@ -139,5 +160,3 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
     );
   }
 }
-
-

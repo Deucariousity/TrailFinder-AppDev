@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:student_nav_system/custom_page_route.dart';
-import 'view_emergency_contacts_screen.dart';
+import 'package:TrailFinder/custom_page_route.dart';
+import 'package:TrailFinder/features/EmergencyContacts.dart';
+import 'package:TrailFinder/features/Help.dart';
+import 'package:TrailFinder/features/Map/CampusMap.dart';
 import 'login_screen.dart';
 
 class GuestHomeScreen extends StatefulWidget {
@@ -76,8 +78,8 @@ class _GuestHomeScreenState extends State<GuestHomeScreen> {
           padding: EdgeInsets.all(16.0),
           children: [
             _buildGridButton(context, 'Emergency Contacts', Icons.security, ViewEmergencyContactsScreen()),
-            _buildGridButton(context, 'Campus Map', Icons.map, null), // Replace null with the actual screen
-            _buildGridButton(context, 'Help', Icons.help, null), // Replace null with the actual screen
+            _buildGridButton(context, 'Campus Map', Icons.map, CampusMapScreen()), // Replace null with the actual screen
+            _buildGridButton(context, 'Help', Icons.help, ViewHelpScreen()),
           ],
         ),
       ),
@@ -105,7 +107,7 @@ class _GuestHomeScreenState extends State<GuestHomeScreen> {
           children: [
             Icon(icon, size: 40, color: Colors.white),
             SizedBox(height: 10),
-            Text(title, style: TextStyle(color: Colors.white, fontSize: 16)),
+            Text(title, style: TextStyle(fontFamily: 'Montserrat', color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
           ],
         ),
       ),
