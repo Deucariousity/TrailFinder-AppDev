@@ -1,4 +1,4 @@
-# student_nav_system
+# TrailFinder
 
 A new Flutter project.
 
